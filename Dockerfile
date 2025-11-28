@@ -1,28 +1,30 @@
-# Multi-stage Dockerfile for Pod Watcher Microservice
-FROM python:3.11-slim as builder
+# Multi-stage Dockerfile for Crystal Pod Watcher
+FROM crystallang/crystal:1.14.0-alpine AS builder
 
 WORKDIR /app
+
+# Copy shard files
+COPY shard.yml shard.lock* ./
 
 # Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN shards install --production
 
-# Final stage
-FROM python:3.11-slim
+# Copy source code
+COPY main.cr .
+
+# Build the application (statically linked)
+RUN crystal build --release --static --no-debug main.cr -o pod-watcher
+
+# Final stage - minimal runtime
+FROM alpine:latest
 
 WORKDIR /app
 
-# Copy dependencies from builder
-COPY --from=builder /root/.local /root/.local
-
-# Copy application code
-COPY main.py .
-
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Copy the compiled binary
+COPY --from=builder /app/pod-watcher .
 
 # Run as non-root user
-RUN useradd -m -u 1000 appuser && \
+RUN adduser -D -u 1000 appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
@@ -32,7 +34,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Run the application
-CMD ["python", "-u", "main.py"]
+CMD ["./pod-watcher"]
