@@ -18,7 +18,7 @@ spec:
       serviceAccountName: pod-watcher
       containers:
       - name: pod-watcher
-        image: pod-watcher:latest
+        image: ghcr.io/matchlighter/pod-watcher:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

@@ -27,7 +27,7 @@ struct PodMetadata
   property conditions : Array(PodCondition)
   property containers : Array(ContainerInfo)
 
-  def initialize(@name, @namespace, @uid, @labels, @annotations, @node_name, 
+  def initialize(@name, @namespace, @uid, @labels, @annotations, @node_name,
                  @phase, @pod_ip, @host_ip, @start_time, @conditions, @containers)
   end
 end
@@ -133,7 +133,7 @@ class PodWatcher
 
     # Initial listing to populate the map
     initial_list
-    
+
     # Watch for changes
     spawn do
       loop do
@@ -149,10 +149,10 @@ class PodWatcher
 
   def initial_list
     Log.info { "Fetching initial pod list from all namespaces..." }
-    
+
     # List all pods - jgaskins/kubernetes returns Array(Kubernetes::Pod)
     pods = @k8s.pods
-    
+
     pods.each do |pod|
       if metadata = extract_pod_metadata(pod)
         if ip = metadata.pod_ip
@@ -162,7 +162,7 @@ class PodWatcher
         end
       end
     end
-    
+
     Log.info { "Initial pod map populated with #{@pod_map.size} pods" }
   rescue ex
     Log.error { "Error during initial pod listing: #{ex.message}" }
@@ -171,14 +171,14 @@ class PodWatcher
 
   def watch_for_changes
     Log.info { "Starting watch for pod changes..." }
-    
+
     # Watch all pods - watch_pods takes a block with Kubernetes::Watch
     @k8s.watch_pods do |watch|
       pod = watch.object
-      
+
       metadata = extract_pod_metadata(pod)
       next unless metadata
-      
+
       pod_ip = metadata.pod_ip
       next unless pod_ip
 
@@ -234,7 +234,6 @@ server = HTTP::Server.new do |context|
     context.response.content_type = "application/json"
     context.response.status_code = 200
     context.response.print({"status" => "healthy", "pod_count" => pod_watcher.pod_count}.to_json)
-
   when {"GET", "/ready"}
     context.response.content_type = "application/json"
     if pod_watcher.pod_count > 0
@@ -244,10 +243,9 @@ server = HTTP::Server.new do |context|
       context.response.status_code = 503
       context.response.print({"status" => "not ready", "pod_count" => 0}.to_json)
     end
-
   when {"GET", "/pod"}
     ip = context.request.query_params["ip"]?
-    
+
     if ip.nil?
       context.response.content_type = "application/json"
       context.response.status_code = 400
@@ -261,15 +259,13 @@ server = HTTP::Server.new do |context|
       context.response.status_code = 404
       context.response.print({"error" => "No pod found with IP #{ip}"}.to_json)
     end
-
   when {"GET", "/pods"}
     namespace = context.request.query_params["namespace"]?
     pods = pod_watcher.get_all_pods(namespace)
-    
+
     context.response.content_type = "application/json"
     context.response.status_code = 200
     context.response.print({"pods" => pods, "count" => pods.size}.to_json)
-
   else
     context.response.status_code = 404
     context.response.print("Not Found")

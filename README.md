@@ -26,26 +26,13 @@ This is probably somewhat niche -
 - Compiled to a single static binary
 
 ## Building
-
-### Quick Build
 ```bash
 ./build.sh
-```
-
-### Manual Build
-```bash
-crystal build --release main.cr -o pod-watcher
-```
-
-### Build Docker Image
-```bash
-docker build -t pod-watcher-crystal:latest .
 ```
 
 ### Environment Variables
 - `PORT` - HTTP server port (default: 8080)
 - `HOST` - HTTP server host (default: 0.0.0.0)
-- `K8S_API_SERVER` - Kubernetes API server URL (for local dev)
 
 ## API Endpoints
 
@@ -85,30 +72,11 @@ Health check endpoint.
 ### GET /ready
 Readiness check endpoint.
 
-### GET /pod?ip=<pod_ip>
-Query pod metadata by IP address.
-
-### GET /pods?namespace=<namespace>
-Get all pods (optional namespace filter).
-
-### GET /health
-Health check endpoint.
-
-### GET /ready
-Readiness check endpoint.
-
 ## Local Development
 
-For local development, you'll need access to the Kubernetes API:
+For local development, you'll need access to the Kubernetes API - this is automagical if you have a working `kubectl` config.
 
 ```bash
-# Option 1: Use kubectl proxy
-kubectl proxy --port=8001 &
-export K8S_API_SERVER=http://127.0.0.1:8001
-./pod-watcher
-
-# Option 2: Port forward to API server
-kubectl port-forward -n default svc/kubernetes 8443:443 &
-export K8S_API_SERVER=https://127.0.0.1:8443
+./build.sh
 ./pod-watcher
 ```
