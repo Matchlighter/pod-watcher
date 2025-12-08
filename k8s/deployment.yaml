@@ -19,7 +19,7 @@ spec:
       containers:
       - name: pod-watcher
         image: ghcr.io/matchlighter/pod-watcher:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http
@@ -29,6 +29,8 @@ spec:
           value: "8080"
         - name: HOST
           value: "0.0.0.0"
+        - name: CLUSTER_CIDR
+          value: "10.42.0.0/16"
         resources:
           requests:
             memory: "64Mi"

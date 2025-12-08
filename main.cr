@@ -3,6 +3,7 @@ require "json"
 require "log"
 require "mutex"
 require "kubernetes"
+require "netmask"
 
 # Pod Watcher Microservice
 # Watches Kubernetes pods and maintains a mapping of Pod IPs to metadata.
@@ -72,12 +73,14 @@ class PodWatcher
 
   def initialize
     @k8s = Kubernetes::Client.new
+    @cluster_cidr = Netmask.new(ENV.fetch("CLUSTER_CIDR", "10.42.0.0/16"))
     Log.info { "Loaded Kubernetes configuration" }
   end
 
   def extract_pod_metadata(pod : Kubernetes::Pod) : PodMetadata?
     pod_ip = pod.status["podIP"]?.try(&.as_s)
     return nil unless pod_ip
+    return nil unless @cluster_cidr.matches?(pod_ip)
 
     labels = pod.metadata.labels || {} of String => String
     annotations = pod.metadata.annotations || {} of String => String
